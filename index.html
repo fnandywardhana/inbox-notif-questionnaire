@@ -317,6 +317,8 @@
     color: var(--ink-faint);
     font-family: ui-monospace, Menlo, Consolas, monospace;
   }
+  .save-note.submitted { color: var(--stage-read); }
+  .save-note.error { color: var(--stage-manage); }
   .btn-row { display: flex; gap: 8px; }
   button {
     font-family: Optima, "Segoe UI", sans-serif;
@@ -328,6 +330,7 @@
     background: var(--paper);
     color: var(--ink);
   }
+  button:disabled { opacity: 0.55; cursor: not-allowed; }
   button.primary {
     background: var(--accent);
     border-color: var(--accent);
@@ -618,7 +621,7 @@
       <span class="save-note" id="save-note">belum ada jawaban tersimpan</span>
       <div class="btn-row">
         <button id="btn-reset" type="button">Reset</button>
-        <button id="btn-export" type="button" class="primary">Export Markdown</button>
+        <button id="btn-submit" type="button" class="primary">Kirim Jawaban</button>
       </div>
     </div>
   </div>
@@ -743,53 +746,104 @@
     location.reload();
   });
 
-  document.getElementById('btn-export').addEventListener('click', function () {
-    function v(name) {
-      var el = document.querySelector('[data-field="' + name + '"]');
-      return el && el.value.trim() ? el.value.trim() : '_(belum diisi)_';
-    }
-    function mcq(name) {
-      if (!state[name]) return '_(belum dipilih)_';
-      if (state[name] === '__other__') return v(name + '-other') + ' _(lainnya)_';
-      return state[name];
-    }
-    function checked(names) {
-      return names
-        .filter(function (n) { return state[n]; })
-        .map(function (n) {
-          var label = document.querySelector('[data-check="' + n + '"]').closest('.check-opt').textContent.trim();
-          return '- [x] ' + label;
-        })
-        .join('\n') || '_(tidak ada yang dipilih)_';
-    }
+  function v(name) {
+    var el = document.querySelector('[data-field="' + name + '"]');
+    return el && el.value.trim() ? el.value.trim() : '_(belum diisi)_';
+  }
+  function mcq(name) {
+    if (!state[name]) return '_(belum dipilih)_';
+    if (state[name] === '__other__') return v(name + '-other') + ' (lainnya)';
+    return state[name];
+  }
+  function checkedList(names) {
+    return names
+      .filter(function (n) { return state[n]; })
+      .map(function (n) {
+        return document.querySelector('[data-check="' + n + '"]').closest('.check-opt').textContent.trim();
+      });
+  }
+  function checkedMd(names) {
+    var items = checkedList(names).map(function (l) { return '- [x] ' + l; });
+    return items.join('\n') || '_(tidak ada yang dipilih)_';
+  }
 
-    var md = '# Self-Audit: Kebutuhan User terhadap Inbox Notifikasi\n\n' +
+  function buildMarkdown() {
+    return '# Self-Audit: Kebutuhan User terhadap Inbox Notifikasi\n\n' +
       '## Tahap 1: Discover\n\n' +
       '1. ' + mcq('discover-1') + '\n2. ' + mcq('discover-2') + '\n3. ' + mcq('discover-3') + '\n\n' +
-      '**Checklist:**\n' + checked(['discover-c1','discover-c2','discover-c3','discover-c4','discover-c5']) +
+      '**Checklist:**\n' + checkedMd(['discover-c1','discover-c2','discover-c3','discover-c4','discover-c5']) +
       (state['discover-c5'] ? '\n  Lainnya: ' + v('discover-other') : '') + '\n\n' +
       '## Tahap 2: Read / Consume\n\n' +
       '1. ' + mcq('read-1') + '\n2. ' + mcq('read-2') + '\n3. ' + mcq('read-3') + '\n4. ' + mcq('read-4') + '\n5. ' + mcq('read-5') + '\n\n' +
-      '**Checklist:**\n' + checked(['read-c1','read-c2','read-c3','read-c4','read-c5']) +
+      '**Checklist:**\n' + checkedMd(['read-c1','read-c2','read-c3','read-c4','read-c5']) +
       (state['read-c5'] ? '\n  Lainnya: ' + v('read-other') : '') + '\n\n' +
       '## Tahap 3: Manage\n\n' +
       '1. ' + mcq('manage-1') + '\n2. ' + mcq('manage-2') + '\n3. ' + mcq('manage-3') + '\n4. ' + mcq('manage-4') + '\n\n' +
-      '**Checklist:**\n' + checked(['manage-c1','manage-c2','manage-c3','manage-c4','manage-c5']) +
+      '**Checklist:**\n' + checkedMd(['manage-c1','manage-c2','manage-c3','manage-c4','manage-c5']) +
       (state['manage-c5'] ? '\n  Lainnya: ' + v('manage-other') : '') + '\n\n' +
       '## Tahap 4: Act\n\n' +
       '1. ' + mcq('act-1') + '\n2. ' + mcq('act-2') + '\n3. ' + mcq('act-3') + '\n4. ' + mcq('act-4') + '\n\n' +
-      '**Checklist:**\n' + checked(['act-c1','act-c2','act-c3','act-c4']) +
+      '**Checklist:**\n' + checkedMd(['act-c1','act-c2','act-c3','act-c4']) +
       (state['act-c4'] ? '\n  Lainnya: ' + v('act-other') : '') + '\n';
+  }
 
-    var blob = new Blob([md], { type: 'text/markdown' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = 'inbox-notifikasi-self-audit.md';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  var FORMSPREE_ENDPOINT = 'https://formspree.io/f/xkolewny';
+
+  document.getElementById('btn-submit').addEventListener('click', function () {
+    var filled = mcqGroups.filter(isGroupFilled).length;
+    if (filled < mcqGroups.length) {
+      var proceed = confirm('Baru ' + filled + ' dari ' + mcqGroups.length + ' pertanyaan terisi. Tetap kirim?');
+      if (!proceed) return;
+    }
+
+    var btn = this;
+    var note = document.getElementById('save-note');
+    btn.disabled = true;
+    note.className = 'save-note';
+    note.textContent = 'Mengirim…';
+
+    var payload = {
+      _subject: 'Inbox Notifikasi Questionnaire — jawaban baru',
+      'Discover 1 - Pernah terlambat tahu notifikasi penting': mcq('discover-1'),
+      'Discover 2 - Frekuensi notifikasi': mcq('discover-2'),
+      'Discover 3 - Reaksi saat badge menumpuk': mcq('discover-3'),
+      'Discover - Checklist sumber sadar notifikasi': checkedList(['discover-c1','discover-c2','discover-c3','discover-c4','discover-c5']).join('; ') + (state['discover-c5'] ? ' (Lainnya: ' + v('discover-other') + ')' : ''),
+      'Read 1 - Yang pertama dicari saat buka inbox': mcq('read-1'),
+      'Read 2 - Kesulitan membedakan jenis notifikasi': mcq('read-2'),
+      'Read 3 - Pernah salah kira jenis notifikasi': mcq('read-3'),
+      'Read 4 - Cara memutuskan baca detail vs sekilas': mcq('read-4'),
+      'Read 5 - Info yang diharap muncul di preview': mcq('read-5'),
+      'Read - Checklist kesulitan membaca daftar': checkedList(['read-c1','read-c2','read-c3','read-c4','read-c5']).join('; ') + (state['read-c5'] ? ' (Lainnya: ' + v('read-other') + ')' : ''),
+      'Manage 1 - Pengalaman arsip/hapus/tandai dibaca': mcq('manage-1'),
+      'Manage 2 - Mencari notifikasi lama': mcq('manage-2'),
+      'Manage 3 - Minat kontrol jenis notifikasi': mcq('manage-3'),
+      'Manage 4 - Inbox penuh sampah karena promo lama': mcq('manage-4'),
+      'Manage - Checklist kemampuan yang kurang': checkedList(['manage-c1','manage-c2','manage-c3','manage-c4','manage-c5']).join('; ') + (state['manage-c5'] ? ' (Lainnya: ' + v('manage-other') + ')' : ''),
+      'Act 1 - Kelancaran menindaklanjuti notifikasi': mcq('act-1'),
+      'Act 2 - Ingin menindaklanjuti tapi tidak tahu caranya': mcq('act-2'),
+      'Act 3 - Alasan tertarik/tidak tertarik promo': mcq('act-3'),
+      'Act 4 - Kecepatan jalur lapor/blokir keamanan': mcq('act-4'),
+      'Act - Checklist hambatan menindaklanjuti': checkedList(['act-c1','act-c2','act-c3','act-c4']).join('; ') + (state['act-c4'] ? ' (Lainnya: ' + v('act-other') + ')' : ''),
+      'Ringkasan lengkap (markdown)': buildMarkdown()
+    };
+
+    fetch(FORMSPREE_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (res) {
+      if (res.ok) {
+        note.className = 'save-note submitted';
+        note.textContent = 'Terkirim, terima kasih!';
+        btn.textContent = 'Terkirim ✓';
+      } else {
+        throw new Error('Request failed');
+      }
+    }).catch(function () {
+      note.className = 'save-note error';
+      note.textContent = 'Gagal mengirim, coba lagi.';
+      btn.disabled = false;
+    });
   });
 })();
 </script>
