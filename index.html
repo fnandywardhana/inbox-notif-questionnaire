@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inbox Notifikasi — Self-Audit Kebutuhan User</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%AC%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --paper: #eef1ee;
+    --card: #f8f9f6;
+    --ink: #1c231f;
+    --ink-muted: #57625b;
+    --ink-faint: #8a938c;
+    --line: #d8ddd6;
+    --accent: #b5701f;
+    --accent-ink: #7a4415;
+    --accent-soft: #f2e2cd;
+    --stage-discover: #4c6b8a;
+    --stage-read: #4f7a6e;
+    --stage-manage: #8a5a7a;
+    --stage-act: #b0752e;
+    --focus: #2f6f62;
+    color-scheme: light dark;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #141815;
+      --card: #1b211c;
+      --ink: #e7eae5;
+      --ink-muted: #9aa69d;
+      --ink-faint: #6b756e;
+      --line: #2b322c;
+      --accent: #e0a15c;
+      --accent-ink: #f1c793;
+      --accent-soft: #33291a;
+      --stage-discover: #7fa0c2;
+      --stage-read: #7fafa0;
+      --stage-manage: #b588a6;
+      --stage-act: #d99b4e;
+      --focus: #6fb3a0;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #141815;
+    --card: #1b211c;
+    --ink: #e7eae5;
+    --ink-muted: #9aa69d;
+    --ink-faint: #6b756e;
+    --line: #2b322c;
+    --accent: #e0a15c;
+    --accent-ink: #f1c793;
+    --accent-soft: #33291a;
+    --stage-discover: #7fa0c2;
+    --stage-read: #7fafa0;
+    --stage-manage: #b588a6;
+    --stage-act: #d99b4e;
+    --focus: #6fb3a0;
+  }
+  :root[data-theme="light"] {
+    --paper: #eef1ee;
+    --card: #f8f9f6;
+    --ink: #1c231f;
+    --ink-muted: #57625b;
+    --ink-faint: #8a938c;
+    --line: #d8ddd6;
+    --accent: #b5701f;
+    --accent-ink: #7a4415;
+    --accent-soft: #f2e2cd;
+    --stage-discover: #4c6b8a;
+    --stage-read: #4f7a6e;
+    --stage-manage: #8a5a7a;
+    --stage-act: #b0752e;
+    --focus: #2f6f62;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Charter, "Iowan Old Style", Georgia, "Times New Roman", serif;
+    line-height: 1.5;
+  }
+
+  .sans { font-family: Optima, "Segoe UI", "Helvetica Neue", Arial, sans-serif; }
+  .mono {
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    letter-spacing: 0.02em;
+  }
+
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 20px 96px;
+  }
+
+  header.top {
+    padding: 48px 0 20px;
+  }
+
+  h1 {
+    font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.15rem);
+    font-weight: 600;
+    margin: 0 0 8px;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+
+  .subtitle {
+    color: var(--ink-muted);
+    font-family: Optima, "Segoe UI", sans-serif;
+    font-size: 0.98rem;
+    max-width: 60ch;
+  }
+
+  .howto {
+    margin-top: 22px;
+    font-family: Optima, "Segoe UI", sans-serif;
+    font-size: 0.88rem;
+    color: var(--ink-muted);
+    border-left: 2px solid var(--line);
+    padding-left: 12px;
+  }
+
+  /* progress bar */
+  .progress-rail {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--paper);
+    padding: 10px 0 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .progress-rail-inner {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .progress-track {
+    flex: 1;
+    height: 5px;
+    background: var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+  .progress-label {
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+    white-space: nowrap;
+  }
+
+  section.stage {
+    margin-top: 34px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left-width: 4px;
+    border-radius: 3px;
+    padding: 22px 24px 24px;
+  }
+  section.stage[data-stage="discover"] { border-left-color: var(--stage-discover); }
+  section.stage[data-stage="read"]     { border-left-color: var(--stage-read); }
+  section.stage[data-stage="manage"]   { border-left-color: var(--stage-manage); }
+  section.stage[data-stage="act"]      { border-left-color: var(--stage-act); }
+
+  .stage-eyebrow {
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  section.stage[data-stage="discover"] .stage-eyebrow { color: var(--stage-discover); }
+  section.stage[data-stage="read"] .stage-eyebrow     { color: var(--stage-read); }
+  section.stage[data-stage="manage"] .stage-eyebrow   { color: var(--stage-manage); }
+  section.stage[data-stage="act"] .stage-eyebrow      { color: var(--stage-act); }
+
+  .stage h2 {
+    font-size: 1.25rem;
+    margin: 0 0 4px;
+    font-weight: 600;
+  }
+  .stage .stage-desc {
+    font-family: Optima, "Segoe UI", sans-serif;
+    color: var(--ink-muted);
+    font-size: 0.9rem;
+    margin: 0 0 18px;
+  }
+
+  .question { margin-top: 18px; }
+  .question:first-of-type { margin-top: 4px; }
+  .question label {
+    display: block;
+    font-size: 1rem;
+    margin-bottom: 7px;
+  }
+  .q-num {
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    color: var(--ink-faint);
+    font-size: 0.85rem;
+    margin-right: 6px;
+  }
+
+  textarea {
+    width: 100%;
+    resize: none;
+    overflow: hidden;
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 10px 12px;
+    font-family: Optima, "Segoe UI", sans-serif;
+    font-size: 0.94rem;
+    line-height: 1.5;
+    min-height: 42px;
+  }
+  textarea:focus-visible, input:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 1px;
+  }
+
+  .checklist {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--line);
+  }
+  .checklist-title {
+    font-family: Optima, "Segoe UI", sans-serif;
+    font-size: 0.82rem;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 10px;
+  }
+  .check-opt {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+    font-family: Optima, "Segoe UI", sans-serif;
+    font-size: 0.92rem;
+    padding: 5px 0;
+  }
+  .check-opt input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--accent);
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .mcq { margin-top: 8px; display: flex; flex-direction: column; }
+  .mcq .opt {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+    font-family: Optima, "Segoe UI", sans-serif;
+    font-size: 0.94rem;
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .mcq .opt:hover { background: var(--paper); }
+  .mcq .opt input[type="radio"] {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--accent);
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .lainnya-input {
+    margin-top: 6px;
+    margin-left: 24px;
+    width: calc(100% - 24px);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 6px 10px;
+    font-family: Optima, "Segoe UI", sans-serif;
+    font-size: 0.9rem;
+    color: var(--ink);
+  }
+
+  footer.actions {
+    position: sticky;
+    bottom: 0;
+    margin-top: 40px;
+    padding: 14px 0 18px;
+    background: linear-gradient(to top, var(--paper) 60%, transparent);
+  }
+  .actions-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-family: Optima, "Segoe UI", sans-serif;
+  }
+  .save-note {
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+  }
+  .btn-row { display: flex; gap: 8px; }
+  button {
+    font-family: Optima, "Segoe UI", sans-serif;
+    font-size: 0.85rem;
+    padding: 8px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+  }
+  button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+  button:hover { filter: brightness(0.97); }
+  :root[data-theme="dark"] button.primary { color: #1c1408; }
+  :root[data-theme="light"] button.primary { color: #fff; }
+  @media (prefers-color-scheme: dark) {
+    button.primary { color: #1c1408; }
+  }
+
+  @media (max-width: 520px) {
+    .actions-inner { flex-direction: column; align-items: stretch; }
+    .btn-row { justify-content: stretch; }
+    .btn-row button { flex: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .progress-fill { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-rail">
+  <div class="progress-rail-inner">
+    <span class="progress-label mono" id="progress-count">0 / 16 diisi</span>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Self-Audit: Kebutuhan User terhadap Inbox Notifikasi</h1>
+    <p class="subtitle">Refleksi retrospektif atas pengalaman pribadi memakai fitur inbox notifikasi di aplikasi perbankan — untuk eksplorasi kebutuhan sebelum enhancement.</p>
+
+    <p class="howto">Cara pakai: pilih opsi yang paling mendekati pengalaman Anda. Kalau tidak ada yang pas, pilih "Lainnya" dan tulis singkat sendiri. Kalau pengalaman berbeda antar aplikasi, boleh pilih yang paling sering terjadi. Jawaban tersimpan otomatis di browser ini.</p>
+  </header>
+
+  <!-- STAGE: DISCOVER -->
+  <section class="stage" data-stage="discover">
+    <div class="stage-eyebrow mono">Tahap 1 / 4</div>
+    <h2>Discover</h2>
+    <p class="stage-desc">Bagaimana Anda tahu ada notifikasi baru?</p>
+
+    <div class="question">
+      <label><span class="q-num">1.</span>Pernah merasa <em>terlambat</em> mengetahui notifikasi penting (mis. transaksi mencurigakan atau promo yang keburu habis)?</label>
+      <div class="mcq" data-group="discover-1">
+        <label class="opt"><input type="radio" name="discover-1" value="Ya, dan berdampak (mis. rugi/kelewatan)"> Ya, dan berdampak (mis. rugi/kelewatan)</label>
+        <label class="opt"><input type="radio" name="discover-1" value="Ya, tapi tidak berdampak besar"> Ya, tapi tidak berdampak besar</label>
+        <label class="opt"><input type="radio" name="discover-1" value="Tidak pernah"> Tidak pernah</label>
+        <label class="opt"><input type="radio" name="discover-1" value="__other__" data-other-toggle="discover-1-other"> Lainnya</label>
+        <input class="lainnya-input" type="text" placeholder="Sebutkan…" data-field="discover-1-other" style="display:none">
+      </div>
+    </div>
+    <div class="question">
+      <label><span class="q-num">2.</span>Bagaimana menurut Anda frekuensi notifikasi yang muncul selama ini?</label>
+      <div class="mcq" data-group="discover-2">
+        <label class="opt"><input type="radio" name="discover-2" value="Terlalu sering, mengganggu"> Terlalu sering, mengganggu</label>
+        <label class="opt"><input type="radio" name="discover-2" value="Terlalu jarang, sering kelewat"> Terlalu jarang, sering kelewat</label>
+        <label class="opt"><input type="radio" name="discover-2" value="Pas / seimbang"> Pas / seimbang</label>
+        <label class="opt"><input type="radio" name="discover-2" value="Berbeda-beda tergantung jenis notifikasi"> Berbeda-beda tergantung jenis notifikasi</label>
+        <label class="opt"><input type="radio" name="discover-2" value="__other__" data-other-toggle="discover-2-other"> Lainnya</label>
+        <input class="lainnya-input" type="text" placeholder="Sebutkan…" data-field="discover-2-other" style="display:none">
+      </div>
+    </div>
+    <div class="question">
+      <label><span class="q-num">3.</span>Saat badge/counter notifikasi menumpuk banyak, reaksi Anda biasanya:</label>
+      <div class="mcq" data-group="discover-3">
+        <label class="opt"><input type="radio" name="discover-3" value="Langsung dibuka dan dibereskan"> Langsung dibuka dan dibereskan</label>
+        <label class="opt"><input type="radio" name="discover-3" value="Dibuka nanti-nanti / ditunda"> Dibuka nanti-nanti / ditunda</label>
+        <label class="opt"><input type="radio" name="discover-3" value="Dibiarkan menumpuk lama"> Dibiarkan menumpuk lama</label>
+        <label class="opt"><input type="radio" name="discover-3" value="Jadi malas buka sama sekali"> Jadi malas buka sama sekali</label>
+        <label class="opt"><input type="radio" name="discover-3" value="__other__" data-other-toggle="discover-3-other"> Lainnya</label>
+        <input class="lainnya-input" type="text" placeholder="Sebutkan…" data-field="discover-3-other" style="display:none">
+      </div>
+    </div>
+
+    <div class="checklist">
+      <div class="checklist-title">Checklist cepat — sumber utama Anda menyadari notifikasi baru (pilih semua yang relevan)</div>
+      <label class="check-opt"><input type="checkbox" data-check="discover-c1"> Push notification di lock screen/home screen</label>
+      <label class="check-opt"><input type="checkbox" data-check="discover-c2"> Badge/counter angka di ikon app</label>
+      <label class="check-opt"><input type="checkbox" data-check="discover-c3"> Kebetulan buka app untuk keperluan lain</label>
+      <label class="check-opt"><input type="checkbox" data-check="discover-c4"> Email/SMS terpisah yang mengingatkan</label>
+      <label class="check-opt"><input type="checkbox" data-check="discover-c5" data-other-toggle="discover-other"> Lainnya</label>
+      <input class="lainnya-input" type="text" placeholder="Sebutkan…" data-field="discover-other" style="display:none">
+    </div>
+  </section>
+
+  <!-- STAGE: READ -->
+  <section class="stage" data-stage="read">
+    <div class="stage-eyebrow mono">Tahap 2 / 4</div>
+    <h2>Read / Consume</h2>
+    <p class="stage-desc">Bagaimana Anda membaca dan menyortir notifikasi?</p>
+
+    <div class="question">
+      <label><span class="q-num">1.</span>Saat membuka inbox notifikasi, apa yang pertama kali Anda cari atau perhatikan?</label>
+      <div class="mcq" data-group="read-1">
+        <label class="opt"><input type="radio" name="read-1" value="Notifikasi yang belum dibaca (unread)"> Notifikasi yang belum dibaca (unread)</label>
+        <label class="opt"><input type="radio" name="read-1" value="Notifikasi transaksi terbaru"> Notifikasi transaksi terbaru</label>
+        <label class="opt"><input type="radio" name="read-1" value="Notifikasi paling atas/terbaru apa saja"> Notifikasi paling atas/terbaru apa saja</label>
+        <label class="opt"><input type="radio" name="read-1" value="Mencari sesuatu yang spesifik (mis. cek transaksi tertentu)"> Mencari sesuatu yang spesifik (mis. cek transaksi tertentu)</label>
+        <label class="opt"><input type="radio" name="read-1" value="__other__" data-other-toggle="read-1-other"> Lainnya</label>
+        <input class="lainnya-input" type="text" placeholder="Sebutkan…" data-field="read-1-other" style="display:none">
+      </div>
+    </div>
+    <div class="question">
+      <label><span class="q-num">2.</span>Seberapa sering Anda kesulitan membedakan notifikasi promo, aktivitas akun, dan transaksi dalam satu daftar?</label>
+      <div class="mcq" data-group="read-2">
+        <label class="opt"><input type="radio" name="read-2" value="Sering sulit dibedakan"> Sering sulit dibedakan</label>
+        <label class="opt"><input type="radio" name="read-2" value="Kadang sulit, tergantung tampilan"> Kadang sulit, tergantung tampilan</label>
+        <label class="opt"><input type="radio" name="read-2" value="Jarang/tidak pernah sulit"> Jarang/tidak pernah sulit</label>
+        <label class="opt"><input type="radio" name="read-2" value="__other__" data-other-toggle="read-2-other"> Lainnya</label>
+        <input class="lainnya-input" type="text" placeholder="Sebutkan…" data-field="read-2-other" style="display:none">
+      </div>
+    </div>
+    <div class="question">
+      <label><span class="q-num">3.</span>Apakah Anda pernah salah kira jenis notifikasi (mis. kira promo padahal transaksi penting, atau sebaliknya)?</label>
+      <div class="mcq" data-group="read-3">
+        <label class="opt"><input type="radio" name="read-3" value="Ya, dan berdampak (mis. terlewat penting)"> Ya, dan berdampak (mis. terlewat penting)</label>
+        <label class="opt"><input type="radio" name="read-3" value="Ya, tapi tidak berdampak"> Ya, tapi tidak berdampak</label>
+        <label class="opt"><input type="radio" name="read-3" value="Tidak pernah"> Tidak pernah</label>
+        <label class="opt"><input type="radio" name="read-3" value="__other__" data-other-toggle="read-3-other"> Lainnya</label>
+        <input class="lainnya-input" type="text" placeholder="Sebutkan…" data-field="read-3-other" style="display:none">
+      </div>
+    </div>
+    <div class="question">
+      <label><span class="q-num">4.</span>Bagaimana Anda biasanya memutuskan notifikasi mana yang layak dibaca detail vs cukup dilihat sekilas?</label>
+      <div class="mcq" data-group="read-4">
+        <label class="opt"><input type="radio" name="read-4" value="Berdasarkan jenis pengirim/kategori"> Berdasarkan jenis pengirim/kategori</label>
+        <label class="opt"><input type="radio" name="read-4" value="Berdasarkan kata kunci yang muncul di preview"> Berdasarkan kata kunci yang muncul di preview</label>
+        <label class="opt"><input type="radio" name="read-4" value="Berdasarkan nominal/angka yang tertera"> Berdasarkan nominal/angka yang tertera</label>
+        <label class="opt"><input type="radio" name="read-4" value="Baca semua secara detail"> Baca semua secara detail</label>
+        <label class="opt"><input type="radio" name="read-4" value="__other__" data-other-toggle="read-4-other"> Lainnya</label>
+        <input class="lainnya-input" type="text" placeholder="Sebutkan…" data-field="read-4-other" style="display:none">
+      </div>
+    </div>
+    <div class="question">
+      <label><span class="q-num">5.</span>Info apa yang Anda <em>harap</em> muncul langsung di preview, tapi ternyata harus klik dulu untuk tahu?</label>
+      <div class="mcq" data-group="read-5">
+        <label class="opt"><input type="radio" name="read-5" value="Nominal transaksi"> Nominal transaksi</label>
+        <label class="opt"><input type="radio" name="read-5" value="Nama merchant/lokasi"> Nama merchant/lokasi</label>
+        <label class="opt"><input type="radio" name="read-5" value="Waktu kejadian"> Waktu kejadian</label>
+        <label class="opt"><input type="radio" name="read-5" value="Sudah cukup lengkap di preview"> Sudah cukup lengkap di preview</label>
+        <label class="opt"><input type="radio" name="read-5" value="__other__" data-other-toggle="read-5-other"> Lainnya</label>
+        <input class="lainnya-input" type="text" placeholder="Sebutkan…" data-field="read-5-other" style="display:none">
+      </div>
+    </div>
+
+    <div class="checklist">
+      <div class="checklist-title">Checklist cepat — yang paling sulit saat membaca daftar notifikasi</div>
+      <label class="check-opt"><input type="checkbox" data-check="read-c1"> Sulit membedakan jenis (promo/aktivitas/transaksi) sekilas</label>
+      <label class="check-opt"><input type="checkbox" data-check="read-c2"> Informasi penting tidak muncul di preview</label>
+      <label class="check-opt"><input type="checkbox" data-check="read-c3"> Terlalu banyak notifikasi tidak relevan mencampuri yang penting</label>
+      <label class="check-opt"><input type="checkbox" data-check="read-c4"> Tidak ada masalah berarti</label>
+      <label class="check-opt"><input type="checkbox" data-check="read-c5" data-other-toggle="read-other"> Lainnya</label>
+      <input class="lainnya-input" type="text" placeholder="Sebutkan…" data-field="read-other" style="display:none">
+    </div>
+  </section>
+
+  <!-- STAGE: MANAGE -->
+  <section class="stage" data-stage="manage">
+    <div class="stage-eyebrow mono">Tahap 3 / 4</div>
+    <h2>Manage</h2>
+    <p class="stage-desc">Bagaimana Anda mengelola notifikasi (baca, arsip, hapus, atur)?</p>
+
+    <div class="question">
+      <label><span class="q-num">1.</span>Pengalaman Anda mengarsipkan, menghapus, atau menandai notifikasi sebagai sudah dibaca:</label>
+      <div class="mcq" data-group="manage-1">
+        <label class="opt"><input type="radio" name="manage-1" value="Mudah dan sering dipakai"> Mudah dan sering dipakai</label>
+        <label class="opt"><input type="radio" name="manage-1" value="Tahu fiturnya tapi jarang dipakai"> Tahu fiturnya tapi jarang dipakai</label>
+        <label class="opt"><input type="radio" name="manage-1" value="Sulit ditemukan/dipakai"> Sulit ditemukan/dipakai</label>
+        <label class="opt"><input type="radio" name="manage-1" value="Tidak tahu ada fitur ini"> Tidak tahu ada fitur ini</label>
+        <label class="opt"><input type="radio" name="manage-1" value="__other__" data-other-toggle="manage-1-other"> Lainnya</label>
+        <input class="lainnya-input" type="text" placeholder="Sebutkan…" data-field="manage-1-other" style="display:none">
+      </div>
+    </div>
+    <div class="question">
+      <label><span class="q-num">2.</span>Mencari notifikasi lama (mis. bukti transaksi 2 minggu lalu) — pengalaman Anda:</label>
+      <div class="mcq" data-group="manage-2">
+        <label class="opt"><input type="radio" name="manage-2" value="Mudah ditemukan lewat pencarian/filter"> Mudah ditemukan lewat pencarian/filter</label>
+        <label class="opt"><input type="radio" name="manage-2" value="Bisa ditemukan tapi butuh usaha (scroll manual)"> Bisa ditemukan tapi butuh usaha (scroll manual)</label>
+        <label class="opt"><input type="radio" name="manage-2" value="Pernah gagal menemukan"> Pernah gagal menemukan</label>
+        <label class="opt"><input type="radio" name="manage-2" value="Tidak pernah mencoba mencari"> Tidak pernah mencoba mencari</label>
+        <label class="opt"><input type="radio" name="manage-2" value="__other__" data-other-toggle="manage-2-other"> Lainnya</label>
+        <input class="lainnya-input" type="text" placeholder="Sebutkan…" data-field="manage-2-other" style="display:none">
+      </div>
+    </div>
+    <div class="question">
+      <label><span class="q-num">3.</span>Kalau Anda bisa mengatur sendiri jenis notifikasi yang masuk (mis. mematikan promo tapi tetap terima transaksi), seberapa Anda menginginkannya?</label>
+      <div class="mcq" data-group="manage-3">
+        <label class="opt"><input type="radio" name="manage-3" value="Sangat ingin"> Sangat ingin</label>
+        <label class="opt"><input type="radio" name="manage-3" value="Lumayan tertarik"> Lumayan tertarik</label>
+        <label class="opt"><input type="radio" name="manage-3" value="Tidak terlalu butuh"> Tidak terlalu butuh</label>
+        <label class="opt"><input type="radio" name="manage-3" value="Tidak butuh sama sekali"> Tidak butuh sama sekali</label>
+        <label class="opt"><input type="radio" name="manage-3" value="__other__" data-other-toggle="manage-3-other"> Lainnya</label>
+        <input class="lainnya-input" type="text" placeholder="Sebutkan…" data-field="manage-3-other" style="display:none">
+      </div>
+    </div>
+    <div class="question">
+      <label><span class="q-num">4.</span>Apakah Anda pernah merasa inbox notifikasi "penuh sampah" karena promo lama menumpuk?</label>
+      <div class="mcq" data-group="manage-4">
+        <label class="opt"><input type="radio" name="manage-4" value="Ya, sering merasa begitu"> Ya, sering merasa begitu</label>
+        <label class="opt"><input type="radio" name="manage-4" value="Kadang-kadang"> Kadang-kadang</label>
+        <label class="opt"><input type="radio" name="manage-4" value="Tidak pernah"> Tidak pernah</label>
+        <label class="opt"><input type="radio" name="manage-4" value="__other__" data-other-toggle="manage-4-other"> Lainnya</label>
+        <input class="lainnya-input" type="text" placeholder="Sebutkan…" data-field="manage-4-other" style="display:none">
+      </div>
+    </div>
+
+    <div class="checklist">
+      <div class="checklist-title">Checklist cepat — kemampuan mengelola notifikasi yang paling Anda rasa kurang</div>
+      <label class="check-opt"><input type="checkbox" data-check="manage-c1"> Pencarian/filter notifikasi lama</label>
+      <label class="check-opt"><input type="checkbox" data-check="manage-c2"> Kontrol jenis notifikasi yang masuk (preferensi)</label>
+      <label class="check-opt"><input type="checkbox" data-check="manage-c3"> Aksi cepat (hapus/arsip massal)</label>
+      <label class="check-opt"><input type="checkbox" data-check="manage-c4"> Sudah cukup baik</label>
+      <label class="check-opt"><input type="checkbox" data-check="manage-c5" data-other-toggle="manage-other"> Lainnya</label>
+      <input class="lainnya-input" type="text" placeholder="Sebutkan…" data-field="manage-other" style="display:none">
+    </div>
+  </section>
+
+  <!-- STAGE: ACT -->
+  <section class="stage" data-stage="act">
+    <div class="stage-eyebrow mono">Tahap 4 / 4</div>
+    <h2>Act</h2>
+    <p class="stage-desc">Bagaimana Anda menindaklanjuti notifikasi?</p>
+
+    <div class="question">
+      <label><span class="q-num">1.</span>Momen menindaklanjuti sebuah notifikasi (klik untuk lihat detail transaksi, klaim promo, konfirmasi aktivitas, dll) — apakah prosesnya lancar?</label>
+      <div class="mcq" data-group="act-1">
+        <label class="opt"><input type="radio" name="act-1" value="Lancar, langsung ke halaman terkait"> Lancar, langsung ke halaman terkait</label>
+        <label class="opt"><input type="radio" name="act-1" value="Lumayan, tapi ada langkah tambahan"> Lumayan, tapi ada langkah tambahan</label>
+        <label class="opt"><input type="radio" name="act-1" value="Tidak lancar / membingungkan"> Tidak lancar / membingungkan</label>
+        <label class="opt"><input type="radio" name="act-1" value="Belum pernah mencoba"> Belum pernah mencoba</label>
+        <label class="opt"><input type="radio" name="act-1" value="__other__" data-other-toggle="act-1-other"> Lainnya</label>
+        <input class="lainnya-input" type="text" placeholder="Sebutkan…" data-field="act-1-other" style="display:none">
+      </div>
+    </div>
+    <div class="question">
+      <label><span class="q-num">2.</span>Pernahkah Anda <em>ingin</em> menindaklanjuti sesuatu dari notifikasi tapi tidak tahu caranya, atau harus pindah ke menu lain yang tidak terhubung langsung?</label>
+      <div class="mcq" data-group="act-2">
+        <label class="opt"><input type="radio" name="act-2" value="Pernah, cukup sering"> Pernah, cukup sering</label>
+        <label class="opt"><input type="radio" name="act-2" value="Pernah, sesekali"> Pernah, sesekali</label>
+        <label class="opt"><input type="radio" name="act-2" value="Tidak pernah"> Tidak pernah</label>
+        <label class="opt"><input type="radio" name="act-2" value="__other__" data-other-toggle="act-2-other"> Lainnya</label>
+        <input class="lainnya-input" type="text" placeholder="Sebutkan…" data-field="act-2-other" style="display:none">
+      </div>
+    </div>
+    <div class="question">
+      <label><span class="q-num">3.</span>Untuk notifikasi terkait promo, apa yang membuat Anda akhirnya tertarik/tidak tertarik menindaklanjuti dari inbox?</label>
+      <div class="mcq" data-group="act-3">
+        <label class="opt"><input type="radio" name="act-3" value="Tertarik kalau relevan dengan kebutuhan saat itu"> Tertarik kalau relevan dengan kebutuhan saat itu</label>
+        <label class="opt"><input type="radio" name="act-3" value="Tertarik kalau nominal/diskonnya besar"> Tertarik kalau nominal/diskonnya besar</label>
+        <label class="opt"><input type="radio" name="act-3" value="Jarang tertarik, biasanya diabaikan"> Jarang tertarik, biasanya diabaikan</label>
+        <label class="opt"><input type="radio" name="act-3" value="Tidak pernah melihat promo di inbox"> Tidak pernah melihat promo di inbox</label>
+        <label class="opt"><input type="radio" name="act-3" value="__other__" data-other-toggle="act-3-other"> Lainnya</label>
+        <input class="lainnya-input" type="text" placeholder="Sebutkan…" data-field="act-3-other" style="display:none">
+      </div>
+    </div>
+    <div class="question">
+      <label><span class="q-num">4.</span>Untuk notifikasi terkait transaksi mencurigakan/keamanan, apakah jalur tindak lanjutnya (mis. lapor/blokir) terasa cukup cepat diakses dari notifikasi itu sendiri?</label>
+      <div class="mcq" data-group="act-4">
+        <label class="opt"><input type="radio" name="act-4" value="Ya, cukup cepat &amp; jelas"> Ya, cukup cepat &amp; jelas</label>
+        <label class="opt"><input type="radio" name="act-4" value="Ada tapi berbelit"> Ada tapi berbelit</label>
+        <label class="opt"><input type="radio" name="act-4" value="Tidak tahu jalurnya ada di notifikasi"> Tidak tahu jalurnya ada di notifikasi</label>
+        <label class="opt"><input type="radio" name="act-4" value="Belum pernah mengalami situasi ini"> Belum pernah mengalami situasi ini</label>
+        <label class="opt"><input type="radio" name="act-4" value="__other__" data-other-toggle="act-4-other"> Lainnya</label>
+        <input class="lainnya-input" type="text" placeholder="Sebutkan…" data-field="act-4-other" style="display:none">
+      </div>
+    </div>
+
+    <div class="checklist">
+      <div class="checklist-title">Checklist cepat — hambatan utama saat ingin menindaklanjuti notifikasi</div>
+      <label class="check-opt"><input type="checkbox" data-check="act-c1"> Tidak ada aksi langsung, harus pindah menu</label>
+      <label class="check-opt"><input type="checkbox" data-check="act-c2"> Tidak jelas langkah selanjutnya</label>
+      <label class="check-opt"><input type="checkbox" data-check="act-c3"> Sudah cukup jelas dan cepat</label>
+      <label class="check-opt"><input type="checkbox" data-check="act-c4" data-other-toggle="act-other"> Lainnya</label>
+      <input class="lainnya-input" type="text" placeholder="Sebutkan…" data-field="act-other" style="display:none">
+    </div>
+  </section>
+</div>
+
+<footer class="actions">
+  <div class="wrap" style="padding:0 20px">
+    <div class="actions-inner">
+      <span class="save-note" id="save-note">belum ada jawaban tersimpan</span>
+      <div class="btn-row">
+        <button id="btn-reset" type="button">Reset</button>
+        <button id="btn-export" type="button" class="primary">Export Markdown</button>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var STORAGE_KEY = 'papoy-inbox-notif-questionnaire-v2';
+  var fields = Array.prototype.slice.call(document.querySelectorAll('[data-field]'));
+  var checks = Array.prototype.slice.call(document.querySelectorAll('[data-check]'));
+  var mcqGroups = Array.prototype.slice.call(document.querySelectorAll('.mcq[data-group]'))
+    .map(function (el) { return el.getAttribute('data-group'); });
+
+  function isGroupFilled(name) {
+    var checkedRadio = document.querySelector('input[name="' + name + '"]:checked');
+    if (!checkedRadio) return false;
+    if (checkedRadio.value === '__other__') {
+      var other = document.querySelector('[data-field="' + name + '-other"]');
+      return !!(other && other.value.trim());
+    }
+    return true;
+  }
+
+  function loadState() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    } catch (e) { return {}; }
+  }
+
+  function saveState(state) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    var note = document.getElementById('save-note');
+    var t = new Date();
+    var hh = String(t.getHours()).padStart(2, '0');
+    var mm = String(t.getMinutes()).padStart(2, '0');
+    note.textContent = 'tersimpan otomatis · ' + hh + ':' + mm;
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = (el.scrollHeight + 2) + 'px';
+  }
+
+  function updateProgress() {
+    var filled = mcqGroups.filter(isGroupFilled).length;
+    var total = mcqGroups.length;
+    var pct = total ? Math.round((filled / total) * 100) : 0;
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-count').textContent = filled + ' / ' + total + ' diisi';
+  }
+
+  var state = loadState();
+
+  fields.forEach(function (el) {
+    var name = el.getAttribute('data-field');
+    if (state[name]) el.value = state[name];
+    if (el.tagName === 'TEXTAREA') autoResize(el);
+    el.addEventListener('input', function () {
+      if (el.tagName === 'TEXTAREA') autoResize(el);
+      state[name] = el.value;
+      saveState(state);
+      updateProgress();
+    });
+  });
+
+  mcqGroups.forEach(function (name) {
+    var radios = Array.prototype.slice.call(document.querySelectorAll('input[name="' + name + '"]'));
+    if (state[name]) {
+      radios.forEach(function (r) {
+        if (r.value === state[name] || (state[name] === '__other__' && r.value === '__other__')) r.checked = true;
+      });
+    }
+    radios.forEach(function (r) {
+      r.addEventListener('change', function () {
+        state[name] = r.value;
+        saveState(state);
+        radios.forEach(function (other) {
+          var toggleId = other.getAttribute('data-other-toggle');
+          if (toggleId) {
+            var input = document.querySelector('[data-field="' + toggleId + '"]');
+            if (input) input.style.display = (other.checked && other.value === '__other__') ? 'block' : 'none';
+          }
+        });
+        updateProgress();
+      });
+    });
+    var checkedNow = document.querySelector('input[name="' + name + '"]:checked');
+    var toggleId = checkedNow && checkedNow.getAttribute('data-other-toggle');
+    if (toggleId) {
+      var input = document.querySelector('[data-field="' + toggleId + '"]');
+      if (input) input.style.display = 'block';
+    }
+  });
+
+  checks.forEach(function (el) {
+    var name = el.getAttribute('data-check');
+    if (state[name]) el.checked = true;
+    el.addEventListener('change', function () {
+      state[name] = el.checked;
+      saveState(state);
+      var otherId = el.getAttribute('data-other-toggle');
+      if (otherId) {
+        var input = document.querySelector('[data-field="' + otherId + '"]');
+        if (input) input.style.display = el.checked ? 'block' : 'none';
+      }
+    });
+    var otherId = el.getAttribute('data-other-toggle');
+    if (otherId && el.checked) {
+      var input = document.querySelector('[data-field="' + otherId + '"]');
+      if (input) input.style.display = 'block';
+    }
+  });
+
+  updateProgress();
+  if (Object.keys(state).length > 0) {
+    document.getElementById('save-note').textContent = 'jawaban tersimpan sebelumnya dimuat';
+  }
+
+  document.getElementById('btn-reset').addEventListener('click', function () {
+    if (!confirm('Hapus semua jawaban di form ini?')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+  });
+
+  document.getElementById('btn-export').addEventListener('click', function () {
+    function v(name) {
+      var el = document.querySelector('[data-field="' + name + '"]');
+      return el && el.value.trim() ? el.value.trim() : '_(belum diisi)_';
+    }
+    function mcq(name) {
+      if (!state[name]) return '_(belum dipilih)_';
+      if (state[name] === '__other__') return v(name + '-other') + ' _(lainnya)_';
+      return state[name];
+    }
+    function checked(names) {
+      return names
+        .filter(function (n) { return state[n]; })
+        .map(function (n) {
+          var label = document.querySelector('[data-check="' + n + '"]').closest('.check-opt').textContent.trim();
+          return '- [x] ' + label;
+        })
+        .join('\n') || '_(tidak ada yang dipilih)_';
+    }
+
+    var md = '# Self-Audit: Kebutuhan User terhadap Inbox Notifikasi\n\n' +
+      '## Tahap 1: Discover\n\n' +
+      '1. ' + mcq('discover-1') + '\n2. ' + mcq('discover-2') + '\n3. ' + mcq('discover-3') + '\n\n' +
+      '**Checklist:**\n' + checked(['discover-c1','discover-c2','discover-c3','discover-c4','discover-c5']) +
+      (state['discover-c5'] ? '\n  Lainnya: ' + v('discover-other') : '') + '\n\n' +
+      '## Tahap 2: Read / Consume\n\n' +
+      '1. ' + mcq('read-1') + '\n2. ' + mcq('read-2') + '\n3. ' + mcq('read-3') + '\n4. ' + mcq('read-4') + '\n5. ' + mcq('read-5') + '\n\n' +
+      '**Checklist:**\n' + checked(['read-c1','read-c2','read-c3','read-c4','read-c5']) +
+      (state['read-c5'] ? '\n  Lainnya: ' + v('read-other') : '') + '\n\n' +
+      '## Tahap 3: Manage\n\n' +
+      '1. ' + mcq('manage-1') + '\n2. ' + mcq('manage-2') + '\n3. ' + mcq('manage-3') + '\n4. ' + mcq('manage-4') + '\n\n' +
+      '**Checklist:**\n' + checked(['manage-c1','manage-c2','manage-c3','manage-c4','manage-c5']) +
+      (state['manage-c5'] ? '\n  Lainnya: ' + v('manage-other') : '') + '\n\n' +
+      '## Tahap 4: Act\n\n' +
+      '1. ' + mcq('act-1') + '\n2. ' + mcq('act-2') + '\n3. ' + mcq('act-3') + '\n4. ' + mcq('act-4') + '\n\n' +
+      '**Checklist:**\n' + checked(['act-c1','act-c2','act-c3','act-c4']) +
+      (state['act-c4'] ? '\n  Lainnya: ' + v('act-other') : '') + '\n';
+
+    var blob = new Blob([md], { type: 'text/markdown' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'inbox-notifikasi-self-audit.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+})();
+</script>
+</body>
+</html>
