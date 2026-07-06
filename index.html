@@ -796,6 +796,7 @@
   }
 
   var FORMSPREE_ENDPOINT = 'https://formspree.io/f/xkolewny';
+  var SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzKGZ8bKio_vau8zV58isaHgeN1Jdv1XFMBjaoS4lsgHLKfWfxvEkTFxuOhPUa_p65jJg/exec';
 
   document.getElementById('btn-submit').addEventListener('click', function () {
     var btn = this;
@@ -828,6 +829,13 @@
       'Act - Checklist hambatan menindaklanjuti': checkedList(['act-c1','act-c2','act-c3','act-c4']).join('; ') + (state['act-c4'] ? ' (Lainnya: ' + v('act-other') + ')' : ''),
       'Ringkasan lengkap (markdown)': buildMarkdown()
     };
+
+    fetch(SHEET_ENDPOINT, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    }).catch(function () { /* best effort, response is opaque */ });
 
     fetch(FORMSPREE_ENDPOINT, {
       method: 'POST',
