@@ -621,7 +621,7 @@
       <span class="save-note" id="save-note">belum ada jawaban tersimpan</span>
       <div class="btn-row">
         <button id="btn-reset" type="button">Reset</button>
-        <button id="btn-submit" type="button" class="primary">Kirim Jawaban</button>
+        <button id="btn-submit" type="button" class="primary" disabled title="Lengkapi semua pertanyaan dulu">Kirim Jawaban</button>
       </div>
     </div>
   </div>
@@ -665,12 +665,20 @@
     el.style.height = (el.scrollHeight + 2) + 'px';
   }
 
+  var submitted = false;
+
   function updateProgress() {
     var filled = mcqGroups.filter(isGroupFilled).length;
     var total = mcqGroups.length;
     var pct = total ? Math.round((filled / total) * 100) : 0;
     document.getElementById('progress-fill').style.width = pct + '%';
     document.getElementById('progress-count').textContent = filled + ' / ' + total + ' diisi';
+    var submitBtn = document.getElementById('btn-submit');
+    if (!submitted) {
+      var complete = filled === total;
+      submitBtn.disabled = !complete;
+      submitBtn.title = complete ? '' : 'Lengkapi semua pertanyaan dulu (' + filled + '/' + total + ')';
+    }
   }
 
   var state = loadState();
@@ -790,12 +798,6 @@
   var FORMSPREE_ENDPOINT = 'https://formspree.io/f/xkolewny';
 
   document.getElementById('btn-submit').addEventListener('click', function () {
-    var filled = mcqGroups.filter(isGroupFilled).length;
-    if (filled < mcqGroups.length) {
-      var proceed = confirm('Baru ' + filled + ' dari ' + mcqGroups.length + ' pertanyaan terisi. Tetap kirim?');
-      if (!proceed) return;
-    }
-
     var btn = this;
     var note = document.getElementById('save-note');
     btn.disabled = true;
@@ -833,9 +835,11 @@
       body: JSON.stringify(payload)
     }).then(function (res) {
       if (res.ok) {
+        submitted = true;
         note.className = 'save-note submitted';
         note.textContent = 'Terkirim, terima kasih!';
         btn.textContent = 'Terkirim ✓';
+        btn.title = '';
       } else {
         throw new Error('Request failed');
       }
